@@ -2,7 +2,7 @@
 
 The city fell on your first night shift. Your mentor is missing. A damaged robot named Patch has one message: **“Don't restart everything. Find what changed.”**
 
-Explore Nexus, follow recovery signals and restore its systems through 500 DevOps questions. The story follows a junior engineer growing into the incident commander who must stop OVERSEER from shutting the city down.
+Play an action-based adventure through Nexus: collect repair cells, navigate machine-filled streets, restore systems and survive drone attacks. The 500-question experience remains a separate optional Training mode. The story follows a junior engineer growing into the incident commander who must stop OVERSEER from shutting the city down.
 
 ![Nexus — original title artwork](assets/nexus-art.svg)
 
@@ -18,11 +18,25 @@ Requires Python 3. No npm install or cloud account is needed to play.
 python3 -m http.server 8080
 ```
 
-Open **http://localhost:8080**. Move with WASD, arrow keys or the touch controls. Approach the glowing beacon and press **E**, or choose **Investigate beacon**. **Follow signal** walks to the objective automatically.
+Open **http://localhost:8080**. Adventure is the primary title-screen action. For the original question campaign, choose **Training · 500 Questions**. In Training, move with WASD, arrow keys or the touch controls, approach the beacon and press **E**, or choose **Investigate beacon**. **Follow signal** walks to the objective automatically.
 
 Follow the signal to each chapter’s workshop terminal before its questions unlock. After each set of 50 questions, face its guardian before advancing. Inspect recorded evidence, choose an answer, read the explanation and move on. Your expedition saves in this browser. Closing or reloading an encounter preserves wrong choices and lifelines already spent. Clearing browser site data deletes the save.
 
-## What's playable
+## Adventure mode — the main game
+
+Choose **Play Adventure** on the title screen. No multiple-choice question blocks adventure progression.
+
+- Walk or sprint through ten districts with solid obstacles and patrolling drones.
+- Collect glowing repair cells by moving over them; each machine consumes one cell.
+- Rotate wire tiles to complete a power circuit.
+- Assemble a release pipeline from interactive components.
+- Adjust replica capacity to meet traffic within a resource budget.
+- Use EMP pulses to stun nearby drones. Restore all three machines, then survive the core-reboot wave to unlock the next district.
+- Repair checkpoints and district progress save separately from Training. Assist mode removes drone damage; every repair still requires interaction.
+
+Adventure controls: WASD/arrows to move, Shift to sprint, E to interact and Space for EMP. Tap the ground or choose Follow objective for pathfinding that respects walls. Touch buttons are available on mobile. The engineering mini-games are simplified analogies, not real production controls. Ten districts reuse three repair mechanics with different wiring, load and hazard difficulty; this is not ten entirely different games.
+
+## Training mode — 500 questions
 
 - **500 questions across ten chapters**, with four options per question.
 - 30 introductory encounters, then **94 incident cases with five different questions each**: diagnose, investigate, repair, verify and prevent. These are five stages of an incident, not 470 unrelated incidents.
@@ -82,7 +96,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-The GitHub Actions workflow runs engine/content checks, verifies reproducible campaign generation, runs desktop/mobile browser checks and uploads screenshots. Browser checks cover answers, reload persistence, lifeline spending, milestones, Skip, extreme content, the ending and reduced-motion navigation.
+The GitHub Actions workflow runs engine/content checks, verifies reproducible campaign generation, runs desktop/mobile browser checks and uploads screenshots. Browser checks cover Training answers, reload persistence, lifelines and the ending, plus Adventure collection, wire rotation, pipeline assembly, capacity adjustment, EMP, core survival, district progression and separate saves.
 
 ## Scope and limitations
 
