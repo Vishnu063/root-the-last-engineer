@@ -6,6 +6,8 @@ Play an action-based adventure through Nexus: collect repair cells, navigate mac
 
 ![Nexus — original title artwork](assets/nexus-art.svg)
 
+**First time playing? [Start here](docs/START_HERE.md)** for setup, controls, your first objective, and save troubleshooting.
+
 ## Play online
 
 [Enter Nexus](https://root-last-engineer.vishnukushwaha63.chatgpt.site)
@@ -15,7 +17,9 @@ Play an action-based adventure through Nexus: collect repair cells, navigate mac
 Requires Python 3. No npm install or cloud account is needed to play.
 
 ```bash
-python3 -m http.server 8080
+git clone https://github.com/Vishnu063/root-the-last-engineer.git
+cd root-the-last-engineer
+python3 -m http.server 8080 --bind 127.0.0.1
 ```
 
 Open **http://localhost:8080**. Adventure is the primary title-screen action. For the original question campaign, choose **Training · 500 Questions**. In Training, move with WASD, arrow keys or the touch controls, approach the beacon and press **E**, or choose **Investigate beacon**. **Follow signal** walks to the objective automatically.
