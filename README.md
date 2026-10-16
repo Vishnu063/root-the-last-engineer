@@ -1,5 +1,7 @@
 # ROOT — The Last Engineer
 
+[Reviewer walkthrough](INTERVIEW.md) · [Portfolio](https://github.com/Vishnu063/Vishnu063/blob/main/PORTFOLIO.md)
+
 The city fell on your first night shift. Your mentor is missing. A damaged robot named Patch has one message: **“Don't restart everything. Find what changed.”**
 
 Play an action-based adventure through Nexus: collect repair cells, navigate machine-filled streets, restore systems and survive drone attacks. The 500-question experience remains a separate optional Training mode. The story follows a junior engineer growing into the incident commander who must stop OVERSEER from shutting the city down.
