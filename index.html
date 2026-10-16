@@ -21,7 +21,7 @@
  <div class="panel status"><small id="district"></small><h2 id="mission-title"></h2><div id="stats" aria-live="polite"></div><div class="progress" role="progressbar" aria-label="Campaign completion" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0"><i id="progress"></i></div><span id="rank"></span></div>
  <div class="panel objective"><small>CURRENT OBJECTIVE</small><p id="objective-text"></p><button id="interact">Investigate beacon</button><button id="navigate" title="Accessible alternative to directional movement">Follow signal</button></div>
  <div class="panel patch"><span class="avatar" aria-hidden="true">▣</span><p id="patch-text" role="status">I’m with you. Let’s restore the workshop.</p></div>
- <div class="bottom"><span>WASD / ARROWS · MOVE &nbsp; E · INTERACT</span><button id="map">City map</button><button id="journal">Journal</button><button id="home">Pause</button></div>
+ <div class="bottom"><span>WASD / ARROWS · MOVE &nbsp; E · INTERACT</span><button id="map">City map</button><button id="journal">Journal</button><button id="feedback-button">Feedback</button><button id="home">Pause</button></div>
  <div class="touch-controls" aria-label="Movement controls"><button data-dir="up" aria-label="Move north">↑</button><div><button data-dir="left" aria-label="Move west">←</button><button data-dir="down" aria-label="Move south">↓</button><button data-dir="right" aria-label="Move east">→</button></div></div>
 </section>
 <dialog id="encounter" aria-labelledby="question-title">
@@ -34,6 +34,8 @@
  <button id="next" class="primary" hidden>CONTINUE →</button>
 </dialog>
 <dialog id="story" aria-labelledby="story-title"><div class="story-art" role="img" aria-label="The floating city of Nexus"></div><div class="story-copy"><small id="story-label"></small><h2 id="story-title"></h2><p id="story-text"></p><button id="story-next" class="primary">FOLLOW THE SIGNAL →</button></div></dialog>
+<dialog id="operation" aria-labelledby="operation-title"><div class="dialog-top"><span id="operation-tag"></span><button id="operation-close" aria-label="Close challenge">×</button></div><h2 id="operation-title"></h2><p id="operation-task"></p><div id="operation-stability"></div><div id="operation-choices"></div><p id="operation-result" role="status"></p><button id="operation-next" class="primary" hidden>RETURN TO NEXUS →</button></dialog>
+<dialog id="feedback-dialog" aria-labelledby="feedback-title"><button id="feedback-close" aria-label="Close feedback">×</button><h2 id="feedback-title">Help shape Nexus</h2><p>No report is sent automatically. Review your report, then choose whether to post it as a GitHub issue.</p><label>How was the difficulty?<select id="feedback-rating"><option>Too easy</option><option selected>About right</option><option>Too hard</option><option>Question seems incorrect</option><option>Game bug</option></select></label><label>What should change?<textarea id="feedback-note" rows="4" maxlength="2000" placeholder="Question number, confusing option, or a gameplay suggestion"></textarea></label><pre id="feedback-preview"></pre><button id="feedback-preview-button">Preview report</button><a id="feedback-link" class="button-link" target="_blank" rel="noopener noreferrer" hidden>Open report on GitHub ↗</a></dialog>
 <dialog id="info" aria-labelledby="info-title"><button id="info-close" aria-label="Close">×</button><h2 id="info-title"></h2><div id="info-body"></div></dialog>
 <script type="module" src="game.js"></script>
 </body></html>
