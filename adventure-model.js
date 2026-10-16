@@ -2,7 +2,7 @@ export const SIZE={w:30,h:24};
 export const stations=[{id:'power',x:6,y:5,name:'Power relay',kind:'circuit'},{id:'pipeline',x:23,y:6,name:'Release forge',kind:'pipeline'},{id:'service',x:22,y:18,name:'Service cluster',kind:'capacity'}];
 export const salvage=[{id:0,x:5,y:18},{id:1,x:12,y:5},{id:2,x:25,y:13}];
 export const core={x:15,y:12};
-export const spawn={x:3,y:21};
+export const spawn={x:3,y:18};
 export function freshAdventure(){return {version:1,sector:0,collected:[],repaired:[],shields:3,xp:0,assist:false,complete:false};}
 export function loadAdventure(raw){try{const s=JSON.parse(raw);if(!s||s.version!==1||!Number.isInteger(s.sector)||s.sector<0||s.sector>9)return freshAdventure();return {...freshAdventure(),sector:s.sector,collected:Array.isArray(s.collected)?[...new Set(s.collected.filter(i=>[0,1,2].includes(i)))]:[],repaired:Array.isArray(s.repaired)?[...new Set(s.repaired.filter(i=>stations.some(v=>v.id===i)))]:[],shields:Number.isInteger(s.shields)&&s.shields>0&&s.shields<=3?s.shields:3,xp:Number.isInteger(s.xp)&&s.xp>=0?s.xp:0,assist:s.assist===true,complete:s.complete===true&&s.sector===9};}catch{return freshAdventure();}}
 export function wallsFor(sector){const walls=new Set();for(let x=0;x<SIZE.w;x++){walls.add(`${x},0`);walls.add(`${x},${SIZE.h-1}`);}for(let y=0;y<SIZE.h;y++){walls.add(`0,${y}`);walls.add(`${SIZE.w-1},${y}`);}
