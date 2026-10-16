@@ -1,12 +1,267 @@
-import {questions} from './questions.js';import{fresh,complete,spend,load}from './engine.js';
-const $=id=>document.getElementById(id);let s;try{s=load(localStorage.getItem('root-v1'));}catch{s=fresh();}let playing=false,done=false,retry=false,used=new Set(),sound=false,ac,px=0,py=4,keys={};const c=$('world'),ctx=c.getContext('2d');let w,h;function resize(){w=innerWidth;h=innerHeight;let d=Math.min(devicePixelRatio,2);c.width=w*d;c.height=h*d;ctx.setTransform(d,0,0,d,0,0);}resize();onresize=resize;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function save(){try{localStorage.setItem('root-v1',JSON.stringify(s));}catch{$('patch-text').textContent='Progress storage unavailable in this browser.';}}function beep(f){if(!sound)return;ac??=new AudioContext();let o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=f;g.gain.setValueAtTime(.03,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.2);o.start();o.stop(ac.currentTime+.2);}
-function info(title,text){$('info-title').textContent=title;$('info-body').textContent=text;$('info').showModal();}$('info-close').onclick=()=>$('info').close();$('help').onclick=()=>info('Field guide','Move with WASD, arrow keys or touch controls. Approach the mint beacon and press E. Choose an answer to repair the incident. Wrong answers cost health. At zero health you return to base; completed missions remain saved. Earn two support credits per ten completions, usable from encounter 20. Special Skip tokens arrive at 100, 200 and 300 completions. This release contains 30 authored encounters out of 500 planned.');$('sound').onclick=()=>{sound=!sound;$('sound').textContent=sound?'Sound on':'Sound off';$('sound').setAttribute('aria-pressed',sound);beep(500);};
-function hud(){let q=questions[s.completed];$('mission-title').textContent=q?`${q.id} · ${q.title}`:'Workshop restored';$('stats').textContent=`${'♥'.repeat(s.health)} · ${s.xp} XP · ${s.completed}/500 · ${s.credits} support · ${s.skips} Skips`;$('progress').style.width=`${s.completed/5}%`;}$('begin').onclick=()=>{playing=true;$('landing').hidden=true;$('hud').hidden=false;hud();};$('home').onclick=()=>{playing=false;$('landing').hidden=false;$('hud').hidden=true;$('begin').textContent='RESUME EXPEDITION ↗';};$('journal').onclick=()=>info('Expedition journal',`${s.completed}/500 planned encounters complete. ${questions.length} playable today. Completed: ${questions.slice(0,s.completed).map(q=>q.title).join(', ')||'none yet'}. Extreme encounters 401–500 are planned, not yet available.`);
-function lives(){let unlocked=s.completed+1>=20;$('life-info').textContent=unlocked?`${s.credits} support credits · ${s.skips} special Skips`:'Support unlocks at encounter 20. Credits earned earlier stay saved.';document.querySelectorAll('[data-life]').forEach(b=>b.disabled=done||used.has(b.dataset.life)||!unlocked||(b.dataset.life==='skip'?s.skips<1:s.credits<1));}
-let options=[];function open(){if(!playing||$('encounter').open||$('info').open)return;if(s.completed>=questions.length){info('Chapter complete','The workshop is alive again. Your 30 completed encounters are saved. The remaining 470 questions and later chapters are still in development.');return;}if(Math.hypot(px-1,py-1)>2.6){$('patch-text').textContent='Follow the mint beacon. Move closer to investigate.';return;}let q=questions[s.completed];done=false;retry=false;used=new Set();$('encounter-tag').textContent=`ENCOUNTER ${q.id} / 500 · ${q.tool}`;$('question-title').textContent=q.title;$('prompt').textContent=q.prompt;$('feedback').textContent='';$('next').hidden=true;$('options').replaceChildren();options=q.options.map((text,i)=>({text,i}));let shift=q.id%4;options=options.slice(shift).concat(options.slice(0,shift));options.forEach((o,i)=>{let b=document.createElement('button'),badge=document.createElement('b'),label=document.createElement('span');badge.textContent='ABCD'[i];label.textContent=o.text;b.append(badge,label);b.onclick=()=>{if(done)return;if(o.i===q.answer){done=true;b.className='correct';$('feedback').textContent=`System restored. ${q.explanation}`;$('next').hidden=false;[...$('options').children].forEach(x=>x.disabled=true);beep(660);}else{b.className='wrong';b.disabled=true;beep(160);if(retry){retry=false;$('feedback').textContent='Second chance absorbed the damage. Try again.';}else{s.health--;$('feedback').textContent='That action does not resolve the incident. Recheck your clues.';if(s.health===0){s.health=3;px=0;py=4;$('encounter').close();info('Back to the workshop',`${q.explanation} Patch restored your health. Completed missions are preserved; approach the beacon to retry.`);}save();hud();}}lives();};$('options').append(b);});lives();$('encounter').showModal();}
-$('interact').onclick=open;$('close').onclick=()=>$('encounter').close();$('next').onclick=()=>$('encounter').close();$('encounter').addEventListener('close',()=>{if(done){s=complete(s);done=false;save();hud();px=0;py=4;$('patch-text').textContent=s.completed%10===0?'District restored! Two support credits earned.':'Another signal is waiting. Good work, engineer.';}});
-document.querySelectorAll('[data-life]').forEach(b=>b.onclick=()=>{if(b.disabled)return;let type=b.dataset.life,q=questions[s.completed];if(type==='skip'){s=complete(s,true);done=false;$('encounter').close();px=0;py=4;}else{s=spend(s);used.add(type);if(type==='hint')$('feedback').textContent=`PATCH: ${q.hint}`;if(type==='retry'){retry=true;$('feedback').textContent='Second chance is armed.';}if(type==='half'){let n=0;[...$('options').children].forEach((el,i)=>{if(options[i].i!==q.answer&&n<2){el.disabled=true;el.style.visibility='hidden';n++;}});}}save();hud();lives();});
-onkeydown=e=>{if(playing&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e'&&!e.repeat)open();};onkeyup=e=>keys[e.key.toLowerCase()]=false;onblur=()=>keys={};document.querySelectorAll('[data-dir]').forEach(b=>{let k={up:'w',down:'s',left:'a',right:'d'}[b.dataset.dir];b.onpointerdown=e=>{b.setPointerCapture(e.pointerId);keys[k]=true;};b.onpointerup=b.onpointercancel=()=>keys[k]=false;});
-function p(x,y,z=0){let a=Math.min(w/21,h/13);return[w*(playing?.52:.71)+(x-y)*a,h*.56+(x+y)*a*.46-z*a,a];}function poly(points,col){ctx.fillStyle=col;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();}function box(x,y,z,col){poly([p(x,y),p(x+1,y),p(x+1,y,z),p(x,y,z)],col);poly([p(x+1,y),p(x+1,y+1),p(x+1,y+1,z),p(x+1,y,z)],'#111f32');poly([p(x,y,z),p(x+1,y,z),p(x+1,y+1,z),p(x,y+1,z)],'#30465b');}
-let last=0;function draw(t){let dt=Math.min((t-last)/1000,.04);last=t;if(playing&&!$('encounter').open&&!$('info').open){px+=((keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0))*dt*3;py+=((keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0))*dt*3;px=Math.max(-6,Math.min(6,px));py=Math.max(-6,Math.min(6,py));}ctx.fillStyle='#080e1b';ctx.fillRect(0,0,w,h);for(let i=0;i<90;i++){ctx.fillStyle='#91aec755';ctx.fillRect(i*137%w,i*71%(h*.65),1,1);}poly([p(-9,-9),p(9,-9),p(9,9),p(-9,9)],'#0e1d2c');ctx.strokeStyle='#36556944';for(let i=-9;i<=9;i++)for(let pair of [[p(i,-9),p(i,9)],[p(-9,i),p(9,i)]]){ctx.beginPath();ctx.moveTo(...pair[0].slice(0,2));ctx.lineTo(...pair[1].slice(0,2));ctx.stroke();}let buildings=[];for(let x=-7;x<=7;x+=2)for(let y=-7;y<=7;y+=2)if(Math.abs(x)>2||Math.abs(y)>2)buildings.push({x,y,z:1.2+(x*x+y*y*3)%9/3});buildings.sort((a,b)=>a.x+a.y-b.x-b.y).forEach((b,i)=>{box(b.x,b.y,b.z,i<s.completed?'#28524d':'#203348');for(let f=0;f<b.z*3;f++){let [x,y,a]=p(b.x+.15,b.y-.01,.25+f*.3);ctx.fillStyle=i<s.completed?'#a6f3cb99':'#6c93ac66';ctx.fillRect(x,y,a*.13,3);}});let [bx,by,a]=p(1,1),pulse=reduced?1:1+Math.sin(t/450)*.13;ctx.strokeStyle='#a6f3cb';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(bx,by,a*.55*pulse,a*.24*pulse,0,0,Math.PI*2);ctx.stroke();let g=ctx.createLinearGradient(0,by-180,0,by);g.addColorStop(0,'#a6f3cb00');g.addColorStop(1,'#a6f3cb44');ctx.fillStyle=g;ctx.fillRect(bx-15,by-180,30,180);ctx.fillStyle='#befcda';ctx.font='10px monospace';ctx.fillText('SIGNAL',bx-18,by-28);let[x,y]=p(playing?px:0,playing?py:4,.2);ctx.shadowColor='#a6f3cb';ctx.shadowBlur=14;ctx.fillStyle='#a6f3cb';ctx.beginPath();ctx.arc(x,y-15,6,0,Math.PI*2);ctx.fill();ctx.fillRect(x-5,y-7,10,15);ctx.shadowBlur=0;let[cx,cy]=p((playing?px:0)+.7,(playing?py:4)-.4,.7+(reduced?0:Math.sin(t/350)*.08));ctx.fillStyle='#d0f5ff';ctx.fillRect(cx-5,cy-5,10,10);if(!reduced){ctx.strokeStyle='#87bec622';for(let i=0;i<35;i++){let x=(i*151+t*.022)%w,y=(i*97+t*.19)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-4,y+14);ctx.stroke();}}requestAnimationFrame(draw);}requestAnimationFrame(draw);
+import {questions} from './questions.js';
+import {fresh, load, beginAttempt, choose, useSupport, optionOrder} from './engine.js';
+import {chapters, chapterFor, beaconFor} from './chapters.js';
+import {NexusWorld} from './world.js';
+
+const $ = id => document.getElementById(id);
+const storageKey = 'root-v1';
+let state;
+let storageAvailable = true;
+try {state = load(localStorage.getItem(storageKey));} catch {state = fresh(); storageAvailable = false;}
+let playing = false;
+let resolved = false;
+let activeQuestion = null;
+let pendingMilestone = 0;
+let sound = false;
+let audio;
+let storyCallback = null;
+const dialogs = ['encounter','info','story'];
+const world = new NexusWorld($('world'), () => ({
+  playing,
+  moving: playing && !dialogs.some(id => $(id).open),
+  completed: state.completed,
+  chapter: Math.min(9, Math.floor(state.completed / 50)),
+  color: chapterFor(state.completed).color,
+  beacon: beaconFor(state.completed)
+}));
+
+world.onArrive = () => setPatch('Reached the recovery signal. Choose Investigate beacon or press E.');
+
+function save() {
+  try {localStorage.setItem(storageKey, JSON.stringify(state));}
+  catch {storageAvailable = false;}
+  if (!storageAvailable) $('patch-text').textContent = 'Browser storage is unavailable. Keep this tab open to retain your current expedition.';
+}
+function tone(frequency) {
+  if (!sound) return;
+  try {
+    audio ??= new AudioContext();
+    audio.resume().catch(() => {});
+    const oscillator = audio.createOscillator(), gain = audio.createGain();
+    oscillator.connect(gain); gain.connect(audio.destination);
+    oscillator.type = 'sine'; oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(.04, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .3);
+    oscillator.start(); oscillator.stop(audio.currentTime + .3);
+  } catch {sound = false; updateSound();}
+}
+function updateSound() {
+  $('sound').textContent = sound ? 'Sound on' : 'Sound off';
+  $('sound').setAttribute('aria-pressed', String(sound));
+}
+function setPatch(text) { $('patch-text').textContent = storageAvailable ? text : `${text} Progress is not being saved: browser storage is unavailable.`; }
+function showInfo(title, body) {
+  world.clearKeys();
+  $('info-title').textContent = title;
+  $('info-body').replaceChildren();
+  if (typeof body === 'string') $('info-body').textContent = body;
+  else $('info-body').append(body);
+  $('info').showModal();
+}
+function story(label, title, text, callback) {
+  world.clearKeys();
+  $('story-label').textContent = label;
+  $('story-title').textContent = title;
+  $('story-text').textContent = text;
+  storyCallback = callback || null;
+  $('story').showModal();
+}
+function updateHud() {
+  const q = questions[state.completed], chapter = chapterFor(state.completed);
+  document.documentElement.style.setProperty('--mint', chapter.color);
+  $('district').textContent = chapter.district;
+  $('mission-title').textContent = q ? `${q.id} · ${q.title}` : 'Nexus restored';
+  $('rank').textContent = `LEVEL ${Math.min(10, Math.floor(state.completed / 50) + 1)} / 10 · ${chapter.role.toUpperCase()}`;
+  $('stats').textContent = `${'♥'.repeat(state.health)} · ${state.xp.toLocaleString()} XP · ${state.completed}/500 restored · ${state.credits} support · ${state.skips} Skips`;
+  $('progress').style.width = `${state.completed / 5}%`;
+  document.querySelector('[role="progressbar"]').setAttribute('aria-valuenow', String(state.completed));
+  $('objective-text').textContent = state.completed === 500 ? 'The city is safe. Read your expedition journal.' : q.extreme ? 'EXTREME · Preserve data and capacity. Reach the red recovery signal.' : `Follow the recovery signal. ${q.phase} the incident with Patch.`;
+  $('city-status').textContent = state.completed === 500 ? '● NEXUS RESTORED' : `● ${Math.round(state.completed / 5)}% RESTORED`;
+  $('interact').disabled = state.completed === 500;
+  $('navigate').disabled = state.completed === 500;
+}
+function showChapterStart() {
+  const index = Math.min(9, Math.floor(state.completed / 50)), chapter = chapters[index];
+  story(`CHAPTER ${String(index + 1).padStart(2,'0')} / 10`, chapter.name, chapter.intro);
+}
+function onEncounterClose() {
+  world.clearKeys();
+  if (!resolved) return;
+  resolved = false;
+  activeQuestion = null;
+  if (pendingMilestone === 500) {
+    pendingMilestone = 0;
+    story('CAMPAIGN COMPLETE · 500 / 500', 'The city rises again.', chapters[9].outro + ' Your expedition is saved. You can review every completed encounter in the journal.');
+    return;
+  }
+  if (pendingMilestone && pendingMilestone % 50 === 0) {
+    const completedChapter = chapters[pendingMilestone / 50 - 1];
+    const reward = [100,200,300].includes(pendingMilestone) ? ' You earned one special Skip token.' : '';
+    pendingMilestone = 0;
+    story('DISTRICT RESTORED', completedChapter.name, completedChapter.outro + reward, showChapterStart);
+  }
+  pendingMilestone = 0;
+}
+function afterCompletion(skipped) {
+  save(); updateHud();
+  world.burst(chapterFor(Math.max(0,state.completed - 1)).color);
+  if (state.completed % 10 === 0) {
+    const skipReward = [100,200,300].includes(state.completed) ? ' A special Skip is yours too.' : '';
+    setPatch(`Checkpoint! Two support credits added.${skipReward}`);
+  } else setPatch(skipped ? 'Signal bypassed. Your Skip token was spent; no XP awarded.' : 'Signal restored. Follow the next beacon.');
+  if (state.completed % 50 === 0) pendingMilestone = state.completed;
+}
+function showReferences(q) {
+  $('references').replaceChildren();
+  for (const url of q.sources || []) {
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.textContent = `Read the official reference · ${new URL(url).hostname}`;
+    $('references').append(a);
+  }
+  $('references').hidden = !q.sources?.length;
+}
+function refreshLifelines() {
+  const q = activeQuestion;
+  const unlocked = !!q && q.id >= 20;
+  $('life-info').textContent = unlocked ? `${state.credits} support credits · ${state.skips} special Skips. Each standard type once per encounter.` : 'Unlocks at question 20. Earn two support credits after every ten completions; early rewards stay saved.';
+  const attempt = state.attempt;
+  document.querySelectorAll('[data-life]').forEach(button => {
+    const type = button.dataset.life;
+    const halfUnavailable = type === 'half' && q && q.options.filter((_,i) => i !== q.answer && !attempt?.wrong.includes(i)).length < 2;
+    button.disabled = resolved || !unlocked || (type === 'skip' ? state.skips < 1 : state.credits < 1 || attempt?.used.includes(type) || halfUnavailable);
+  });
+}
+function renderOptions(q) {
+  $('options').replaceChildren();
+  optionOrder(q.id).forEach((original, position) => {
+    const button = document.createElement('button');
+    const badge = document.createElement('b'), label = document.createElement('span');
+    badge.textContent = 'ABCD'[position]; label.textContent = q.options[original];
+    button.append(badge, label); button.dataset.option = String(original);
+    const attempt = state.attempt;
+    if (attempt?.wrong.includes(original)) {button.disabled = true; button.className = 'wrong';}
+    if (attempt?.hidden.includes(original)) {button.disabled = true; button.className = 'eliminated'; label.textContent = 'Eliminated by 50:50';}
+    button.addEventListener('click', () => answerQuestion(original, button));
+    $('options').append(button);
+  });
+}
+function openEncounter() {
+  if (!playing || dialogs.some(id => $(id).open) || state.completed >= questions.length) return;
+  if (!world.near(beaconFor(state.completed))) {setPatch('Follow the glowing signal, or use Follow signal to reach it automatically.');tone(180);return;}
+  const q = questions[state.completed];
+  state = beginAttempt(state, q); save();
+  activeQuestion = q; resolved = false;
+  world.clearKeys();
+  $('encounter-tag').textContent = `${q.extreme ? 'EXTREME' : 'LEVEL ' + q.difficulty} · ${q.id}/500 · ${q.tool}`;
+  $('question-title').textContent = q.title;
+  $('evidence').hidden = !q.evidence;
+  $('evidence').open = false;
+  $('evidence-text').textContent = q.evidence || '';
+  $('prompt').textContent = q.evidence ? q.prompt.split('\n\n').slice(1).join('\n\n') : q.prompt;
+  $('feedback').textContent = state.attempt.used.includes('hint') ? `PATCH: ${q.hint}` : state.attempt.retry ? 'Second chance is armed.' : state.attempt.wrong.length ? 'Your previous choices are marked. Recheck the evidence.' : '';
+  $('references').hidden = true; $('next').hidden = true;
+  $('case-progress').replaceChildren();
+  $('case-progress').hidden = !q.caseId;
+  if (q.caseId) for (const phase of ['Diagnose','Investigate','Repair','Verify','Prevent']) {
+    const marker = document.createElement('span');
+    const index = ['Diagnose','Investigate','Repair','Verify','Prevent'].indexOf(q.phase);
+    const at = ['Diagnose','Investigate','Repair','Verify','Prevent'].indexOf(phase);
+    marker.className = at < index ? 'past' : at === index ? 'current' : '';
+    marker.title = phase; marker.setAttribute('aria-label', `${phase}${at === index ? ' (current)' : ''}`);
+    $('case-progress').append(marker);
+  }
+  renderOptions(q); refreshLifelines();
+  $('encounter').showModal();
+}
+function answerQuestion(original, button) {
+  if (resolved || !activeQuestion || button.disabled) return;
+  const q = activeQuestion;
+  let result;
+  try {result = choose(state, q, original);} catch {return;}
+  state = result.state;
+  if (result.correct) {
+    resolved = true; button.className = 'correct';
+    [...$('options').children].forEach(b => b.disabled = true);
+    $('feedback').textContent = `${q.phase === 'Prevent' ? 'Incident contained.' : 'Signal recovered.'} ${q.explanation}`;
+    $('next').textContent = state.completed === 500 ? 'RESTORE NEXUS →' : state.completed % 50 === 0 ? 'RESTORE DISTRICT →' : 'CONTINUE →';
+    $('next').hidden = false; showReferences(q); afterCompletion(false); tone(660);
+  } else if (result.rescued) {
+    save(); updateHud();
+    $('encounter').close(); world.reset();
+    showInfo('Patch brought you home.', `${q.explanation} You have three health again. Completed missions and unspent rewards are safe. Approach the beacon to retry this encounter.`);
+    tone(150);
+  } else {
+    save(); updateHud(); renderOptions(q);
+    $('feedback').textContent = result.shielded ? 'Second chance absorbed the damage. Inspect the evidence and try again.' : 'That choice does not match this incident. One health lost. Recheck the evidence and try another option.';
+    tone(180);
+  }
+  refreshLifelines();
+}
+function useLifeline(type) {
+  if (resolved || !activeQuestion) return;
+  const q = activeQuestion;
+  try {state = useSupport(state, q, type);} catch (error) {$('feedback').textContent = error.message; return;}
+  if (type === 'skip') {
+    resolved = true; afterCompletion(true); $('encounter').close(); tone(410);return;
+  }
+  save(); updateHud(); renderOptions(q);
+  if (type === 'hint') {$('feedback').textContent = `PATCH: ${q.hint}`; if (q.evidence) $('evidence').open = true;}
+  if (type === 'retry') $('feedback').textContent = 'Second chance armed: your next wrong answer costs no health.';
+  if (type === 'half') $('feedback').textContent = 'Two incorrect options eliminated. Choose from the remaining signals.';
+  refreshLifelines(); tone(440);
+}
+function showMap() {
+  const grid = document.createElement('div'); grid.className = 'map-grid';
+  chapters.forEach((chapter, i) => {
+    const card = document.createElement('div');card.className = 'map-card' + (Math.min(9,Math.floor(state.completed/50)) === i ? ' current' : '');
+    const tag = document.createElement('small'),title = document.createElement('h3'),summary = document.createElement('p');
+    const restored = Math.max(0,Math.min(50,state.completed-i*50));
+    tag.textContent = `${String(i+1).padStart(2,'0')} / ${i >= 8 ? 'EXTREME' : chapter.role.toUpperCase()}`;
+    title.textContent = chapter.name; summary.textContent = `Questions ${i*50+1}–${(i+1)*50} · ${restored}/50 restored${state.completed<i*50 ? ' · locked' : ''}`;
+    card.append(tag,title,summary);grid.append(card);
+  });
+  showInfo('Map of Nexus', grid);
+}
+function showJournal() {
+  const container = document.createElement('div'),summary = document.createElement('p'),list = document.createElement('ol');
+  summary.textContent = `${state.completed}/500 restored · ${state.xp.toLocaleString()} XP. Select a completed encounter to review its explanation.`;
+  list.className = 'journal-list';
+  questions.slice(0,state.completed).forEach(q => {
+    const li = document.createElement('li'),details = document.createElement('details'),title = document.createElement('summary'),text = document.createElement('p');
+    title.textContent = `${q.id}. ${q.title} · ${q.tool}`; text.textContent = q.explanation;
+    details.append(title,text);li.append(details);list.append(li);
+  });
+  container.append(summary,list);showInfo('Expedition journal',container);
+}
+$('begin').addEventListener('click', () => {
+  playing = true; document.body.classList.add('in-game');$('landing').hidden = true;$('hud').hidden = false;updateHud();
+  if (state.completed === 0 && !state.attempt) showChapterStart();
+  if (state.completed === 500) setPatch('Nexus is restored. Your expedition lives in the journal.');
+});
+$('home').addEventListener('click', () => {playing=false;world.clearKeys();document.body.classList.remove('in-game');$('hud').hidden=true;$('landing').hidden=false;$('begin').textContent='RESUME EXPEDITION ↗';});
+$('help').addEventListener('click', () => showInfo('Your field guide', 'Move with WASD, arrows or the touch controls. Follow signal provides an accessible automatic walk to the beacon; then choose Investigate beacon or press E. Inspect the evidence and choose one of four answers. Each wrong answer costs one of three health. At zero health Patch returns you to base with completed missions saved. Every ten completions earns two support credits; they become usable at question 20. Choose 50:50, Ask Patch or Second Chance for one credit. Each type is usable once per encounter, and use is saved when you close or reload. Skip is a separate token earned only at 100, 200 and 300 completions; it spends no health but earns no XP. Skips count toward milestone progression. Ten chapters span 500 questions; 401–500 are extreme multi-system incidents. This is a fictional simulator: no commands execute on real systems. Progress stays in this browser.'));
+$('sound').addEventListener('click', () => {sound=!sound;updateSound();tone(520);});
+$('map').addEventListener('click',showMap);$('journal').addEventListener('click',showJournal);
+$('info-close').addEventListener('click', () => $('info').close());
+$('story-next').addEventListener('click', () => $('story').close());
+$('story').addEventListener('close', () => {const callback=storyCallback;storyCallback=null;callback?.();});
+$('close').addEventListener('click', () => $('encounter').close());
+$('next').addEventListener('click', () => $('encounter').close());
+$('encounter').addEventListener('close',onEncounterClose);
+$('interact').addEventListener('click',openEncounter);
+$('navigate').addEventListener('click', () => {setPatch('Following the recovery signal. Investigate when you arrive.');world.follow(beaconFor(state.completed));});
+document.querySelectorAll('[data-life]').forEach(button => button.addEventListener('click', () => useLifeline(button.dataset.life)));
+addEventListener('keydown', event => {
+  if (!playing || dialogs.some(id => $(id).open) || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key)) event.preventDefault();
+  world.keys[event.key.toLowerCase()]=true;
+  if (event.key.toLowerCase()==='e' && !event.repeat) openEncounter();
+});
+addEventListener('keyup',event => world.keys[event.key.toLowerCase()]=false);
+document.querySelectorAll('[data-dir]').forEach(button => {
+  const key={up:'w',down:'s',left:'a',right:'d'}[button.dataset.dir];
+  button.addEventListener('pointerdown',event => {event.preventDefault();button.setPointerCapture(event.pointerId);world.keys[key]=true;});
+  for (const event of ['pointerup','pointercancel','lostpointercapture']) button.addEventListener(event,() => world.keys[key]=false);
+});
+if (state.completed > 0) $('begin').textContent='RESUME EXPEDITION ↗';
