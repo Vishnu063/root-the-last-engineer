@@ -6,6 +6,7 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 import {fresh,complete} from '../engine.js';
 import {questions} from '../questions.js';
+import {operations} from '../operations.js';
 const require=createRequire(import.meta.url);
 let resolved;
 try {resolved=require.resolve('playwright');} catch {
@@ -37,12 +38,14 @@ try {
   await page.screenshot({path:path.join(root,'test-results/title-desktop.png')});
   async function seed(count, overrides={}) {
     let s=fresh();for(let i=0;i<count;i++)s=complete(s);Object.assign(s,overrides);
-    await page.evaluate(s=>localStorage.setItem('root-v1',JSON.stringify(s)),s);await page.reload();await page.click('#begin');
+    await page.evaluate(s=>{localStorage.setItem('root-v1',JSON.stringify(s));localStorage.setItem('root-operations-v1',JSON.stringify({puzzles:Array.from({length:10},(_,i)=>i),bosses:Array.from({length:Math.floor(s.completed/50)},(_,i)=>i)}));},s);await page.reload();await page.click('#begin');
   }
   async function enter(){await page.click('#navigate');await page.waitForFunction(()=>document.querySelector('#patch-text').textContent.includes('Reached the recovery signal'),{},{timeout:20000});await page.click('#interact');try {await page.locator('#encounter[open]').waitFor({timeout:5000});}catch(e){console.log('DEBUG',JSON.stringify({errors,patch:await page.locator('#patch-text').textContent(),stats:await page.locator('#stats').textContent(),dialogs:await page.locator('dialog[open]').count()}));await page.screenshot({path:path.join(root,'test-results/failure.png')});throw e;}}
+  async function travel(){await page.click('#navigate');await page.waitForFunction(()=>document.querySelector('#patch-text').textContent.includes('Reached the recovery signal'),{},{timeout:20000});await page.click('#interact');}
+  async function guardian(chapter){await page.click('#story-next');await travel();await page.locator('#operation[open]').waitFor();await page.getByRole('button',{name:operations[chapter].boss.steps[1][0],exact:true}).click();assert.match(await page.locator('#operation-stability').textContent(),/◆◆◇/);for(const text of operations[chapter].boss.steps[0])await page.getByRole('button',{name:text,exact:true}).click();await page.click('#operation-next');}
   async function correct(id){await page.locator(`#options button[data-option="${questions[id-1].answer}"]`).click();await page.click('#next');}
   async function state(){return page.evaluate(()=>JSON.parse(localStorage.getItem('root-v1')));}
-  await page.click('#begin');await page.locator('#story[open]').waitFor();await page.click('#story-next');await enter();
+  await page.click('#begin');await page.locator('#story[open]').waitFor();await page.click('#story-next');await travel();await page.locator('#operation[open]').waitFor();await page.getByRole('button',{name:operations[0].puzzle.choices[0],exact:true}).click();await page.click('#operation-next');await enter();
   await page.locator('#options button[data-option="1"]').click();assert.equal((await state()).health,2);
   await page.click('#close');await page.reload();await page.click('#begin');await enter();
   assert.equal(await page.locator('#options button[data-option="1"]').isDisabled(),true);
@@ -58,18 +61,19 @@ try {
   await page.locator(`#options button[data-option="${wrong}"]`).click();assert.equal((await state()).health,3);
   await page.click('[data-life="hint"]');await correct(30);assert.equal((await state()).credits,3);
   await seed(99);await enter();assert.equal(await page.locator('[data-life="skip"]').isDisabled(),true);await correct(100);
-  await page.locator('#story[open]').waitFor();await page.click('#story-next');await page.locator('#story[open]').waitFor();await page.click('#story-next');
+  await page.locator('#story[open]').waitFor();await guardian(1);await page.click('#story-next');await page.locator('#story[open]').waitFor();await page.click('#story-next');
   assert.equal((await state()).skips,1);await enter();await page.click('[data-life="skip"]');assert.equal((await state()).completed,101);assert.equal((await state()).skips,0);assert.equal((await state()).xp,10000);
   await seed(400);await enter();assert.match(await page.locator('#encounter-tag').textContent(),/EXTREME/);await page.click('#evidence summary');assert.match(await page.locator('#evidence-text').textContent(),/column/);await page.click('#close');
   await page.screenshot({path:path.join(root,'test-results/city-desktop.png')});
-  await seed(499);await enter();await correct(500);await page.locator('#story[open]').waitFor();assert.match(await page.locator('#story-label').textContent(),/500/);assert.equal((await state()).completed,500);await page.click('#story-next');
-  await page.setViewportSize({width:390,height:844});await page.click('#home');await page.screenshot({path:path.join(root,'test-results/title-mobile.png')});
+  await seed(499);await enter();await correct(500);await page.locator('#story[open]').waitFor();await guardian(9);await page.locator('#story[open]').waitFor();assert.match(await page.locator('#story-label').textContent(),/500/);assert.equal((await state()).completed,500);await page.click('#story-next');
+  await page.setViewportSize({width:390,height:844});await page.click('#home');await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#title-art')).opacity)>.99);await page.screenshot({path:path.join(root,'test-results/title-mobile.png')});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await seed(1);await enter();await page.screenshot({path:path.join(root,'test-results/encounter-mobile.png')});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.click('#close');await page.click('#feedback-button');await page.fill('#feedback-note','Question wording feedback');await page.click('#feedback-preview-button');assert.match(await page.locator('#feedback-preview').textContent(),/Question wording feedback/);assert.match(await page.locator('#feedback-link').getAttribute('href'),/github.com/);await page.click('#feedback-close');
   await context.close();
   const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}}),rp=await reduced.newPage();
-  await rp.goto(url);await rp.click('#begin');await rp.click('#story-next');await rp.click('#navigate');await rp.waitForFunction(()=>document.querySelector('#patch-text').textContent.includes('Reached the recovery signal'));await rp.click('#interact');await rp.locator('#encounter[open]').waitFor();await reduced.close();
+  await rp.goto(url);await rp.click('#begin');await rp.click('#story-next');await rp.click('#navigate');await rp.waitForFunction(()=>document.querySelector('#patch-text').textContent.includes('Reached the recovery signal'));await rp.click('#interact');await rp.locator('#operation[open]').waitFor();await rp.getByRole('button',{name:operations[0].puzzle.choices[0],exact:true}).click();await rp.click('#operation-next');await reduced.close();
   assert.deepEqual(errors,[]);
-  console.log('Browser checks passed: exploration, answers, persistence, lifelines, milestone, Skip, extreme chapter, ending, mobile layout and reduced motion.');
+  console.log('Browser checks passed: exploration, answers, persistence, lifelines, milestone, Skip, extreme chapter, puzzles, boss recovery sequences, feedback preview, ending, mobile layout and reduced motion.');
 } finally {await browser?.close();await new Promise(r=>server.close(r));}
