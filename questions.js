@@ -31,3 +31,7 @@ export const questions = [
 ['Observability','Watchtower','Users report errors after a release. Which evidence best helps test the release hypothesis?',['Error rate and latency correlated with deployment time','Only total Git commits','Only the number of developers','Only the oldest uptime screenshot'],0,'Correlating symptoms with changes helps form a hypothesis; correlation alone does not establish causation.','Connect user impact to the change timeline.'],
 ['Security','Least Privilege','A deployment job only needs one repository image pull. Which access design is best?',['Short-lived identity with narrowly scoped pull permissions','Permanent administrator credentials','A shared root password','Public write access to the registry'],0,'Scoped short-lived credentials reduce privilege and credential exposure.','Minimize both permissions and credential lifetime.']
 ].map((q,i)=>({id:i+1,tool:q[0],title:q[1],prompt:q[2],options:q[3],answer:q[4],explanation:q[5],hint:q[6]}));
+
+import {campaign} from './campaign.js';
+questions.push(...campaign);
+for (const q of questions) { q.difficulty ??= Math.ceil(q.id / 50); q.extreme ??= q.id > 400; q.phase ??= 'Discover'; }
