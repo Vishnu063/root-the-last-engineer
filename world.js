@@ -129,12 +129,12 @@ export class NexusWorld {
       ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();
     }
     const beacon=this.project(...state.beacon,.05),pulse=this.reduced?1:1+Math.sin(t/450)*.1;
-    const boss=(state.completed+1)%50===0;
+    const boss=state.challenge==='boss';
     ctx.strokeStyle=state.color;ctx.lineWidth=2;
     ctx.beginPath();ctx.ellipse(beacon.x,beacon.y,this.scale*.55*pulse,this.scale*.24*pulse,0,0,Math.PI*2);ctx.stroke();
     if(boss){ctx.beginPath();ctx.ellipse(beacon.x,beacon.y,this.scale*.9,this.scale*.4,0,0,Math.PI*2);ctx.stroke();}
     const beam=ctx.createLinearGradient(0,beacon.y-160,0,beacon.y);beam.addColorStop(0,state.color+'00');beam.addColorStop(1,state.color+'40');ctx.fillStyle=beam;ctx.fillRect(beacon.x-13,beacon.y-160,26,160);
-    ctx.fillStyle=state.color;ctx.font='10px monospace';ctx.textAlign='center';ctx.fillText(boss?'DISTRICT GUARDIAN':'RECOVERY SIGNAL',beacon.x,beacon.y-35);ctx.textAlign='left';
+    ctx.fillStyle=state.color;ctx.font='10px monospace';ctx.textAlign='center';ctx.fillText(state.label || (boss?'DISTRICT GUARDIAN':'RECOVERY SIGNAL'),beacon.x,beacon.y-35);ctx.textAlign='left';
     this.drawHero(t,state);
     for(const b of buildings.filter(b=>b.x+b.y>=0))this.building(b.x,b.y,b.index,state,t);
     if(!this.reduced) {
