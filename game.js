@@ -2,12 +2,17 @@ import {questions} from './questions.js';
 import {fresh, load, beginAttempt, choose, useSupport, optionOrder} from './engine.js';
 import {chapters, chapterFor, beaconFor} from './chapters.js';
 import {NexusWorld} from './world.js';
+import {operations,createOperationState,validOperationState,bossAction,activeObjective} from './operations.js';
 
 const $ = id => document.getElementById(id);
 const storageKey = 'root-v1';
 let state;
 let storageAvailable = true;
 try {state = load(localStorage.getItem(storageKey));} catch {state = fresh(); storageAvailable = false;}
+let operationProgress;
+try {const raw=localStorage.getItem('root-operations-v1');operationProgress=raw?validOperationState(JSON.parse(raw)):createOperationState();if(!raw&&state.completed>0){const past=Math.min(9,Math.floor(state.completed/50));operationProgress.puzzles=Array.from({length:past},(_,i)=>i);operationProgress.bosses=Array.from({length:past},(_,i)=>i);}}catch{operationProgress=createOperationState();}
+function objective(){return activeObjective(state.completed,operationProgress);}
+function targetBeacon(){return objective().beacon || beaconFor(state.completed);}
 let playing = false;
 let resolved = false;
 let activeQuestion = null;
@@ -15,20 +20,22 @@ let pendingMilestone = 0;
 let sound = false;
 let audio;
 let storyCallback = null;
-const dialogs = ['encounter','info','story'];
+const dialogs = ['encounter','info','story','operation','feedback-dialog'];
 const world = new NexusWorld($('world'), () => ({
   playing,
   moving: playing && !dialogs.some(id => $(id).open),
   completed: state.completed,
-  chapter: Math.min(9, Math.floor(state.completed / 50)),
-  color: chapterFor(state.completed).color,
-  beacon: beaconFor(state.completed)
+  chapter: objective().chapter,
+  color: chapters[objective().chapter].color,
+  beacon: targetBeacon(),
+  challenge: objective().type,
+  label: objective().type==='puzzle'?'WORKSHOP TERMINAL':objective().type==='boss'?'DISTRICT GUARDIAN':'RECOVERY SIGNAL'
 }));
 
 world.onArrive = () => setPatch('Reached the recovery signal. Choose Investigate beacon or press E.');
 
 function save() {
-  try {localStorage.setItem(storageKey, JSON.stringify(state));}
+  try {localStorage.setItem(storageKey, JSON.stringify(state));localStorage.setItem('root-operations-v1',JSON.stringify(operationProgress));}
   catch {storageAvailable = false;}
   if (!storageAvailable) $('patch-text').textContent = 'Browser storage is unavailable. Keep this tab open to retain your current expedition.';
 }
@@ -67,18 +74,19 @@ function story(label, title, text, callback) {
   $('story').showModal();
 }
 function updateHud() {
-  const q = questions[state.completed], chapter = chapterFor(state.completed);
+  const q = questions[state.completed], chapter = chapters[objective().chapter];
   document.documentElement.style.setProperty('--mint', chapter.color);
   $('district').textContent = chapter.district;
-  $('mission-title').textContent = q ? `${q.id} · ${q.title}` : 'Nexus restored';
-  $('rank').textContent = `LEVEL ${Math.min(10, Math.floor(state.completed / 50) + 1)} / 10 · ${chapter.role.toUpperCase()}`;
+  const current=objective();
+  $('mission-title').textContent = current.type==='puzzle'?operations[current.chapter].puzzle.title:current.type==='boss'?operations[current.chapter].boss.title:q?`${q.id} · ${q.title}`:'Nexus restored';
+  $('rank').textContent = `LEVEL ${objective().chapter+1} / 10 · ${chapter.role.toUpperCase()}`;
   $('stats').textContent = `${'♥'.repeat(state.health)} · ${state.xp.toLocaleString()} XP · ${state.completed}/500 restored · ${state.credits} support · ${state.skips} Skips`;
   $('progress').style.width = `${state.completed / 5}%`;
   document.querySelector('[role="progressbar"]').setAttribute('aria-valuenow', String(state.completed));
-  $('objective-text').textContent = state.completed === 500 ? 'The city is safe. Read your expedition journal.' : q.extreme ? 'EXTREME · Preserve data and capacity. Reach the red recovery signal.' : `Follow the recovery signal. ${q.phase} the incident with Patch.`;
-  $('city-status').textContent = state.completed === 500 ? '● NEXUS RESTORED' : `● ${Math.round(state.completed / 5)}% RESTORED`;
-  $('interact').disabled = state.completed === 500;
-  $('navigate').disabled = state.completed === 500;
+  $('objective-text').textContent = current.type==='puzzle'?'Explore the workshop terminal and repair its circuit.':current.type==='boss'?'Face the district guardian. Carry out four repairs in a safe order.':state.completed === 500 ? 'The city is safe. Read your expedition journal.' : q.extreme ? 'EXTREME · Preserve data and capacity. Reach the red recovery signal.' : `Follow the recovery signal. ${q.phase} the incident with Patch.`;
+  $('city-status').textContent = current.type === 'complete' ? '● NEXUS RESTORED' : `● ${Math.round(state.completed / 5)}% RESTORED`;
+  $('interact').disabled = current.type === 'complete';
+  $('navigate').disabled = current.type === 'complete';
 }
 function showChapterStart() {
   const index = Math.min(9, Math.floor(state.completed / 50)), chapter = chapters[index];
@@ -89,17 +97,11 @@ function onEncounterClose() {
   if (!resolved) return;
   resolved = false;
   activeQuestion = null;
-  if (pendingMilestone === 500) {
-    pendingMilestone = 0;
-    story('CAMPAIGN COMPLETE · 500 / 500', 'The city rises again.', chapters[9].outro + ' Your expedition is saved. You can review every completed encounter in the journal.');
-    return;
+  if(pendingMilestone){
+    const chapter=Math.min(9,pendingMilestone/50-1);pendingMilestone=0;
+    story('DISTRICT GUARDIAN',operations[chapter].boss.title,operations[chapter].boss.brief+' Reach its signal to begin the recovery sequence.');
   }
-  if (pendingMilestone && pendingMilestone % 50 === 0) {
-    const completedChapter = chapters[pendingMilestone / 50 - 1];
-    const reward = [100,200,300].includes(pendingMilestone) ? ' You earned one special Skip token.' : '';
-    pendingMilestone = 0;
-    story('DISTRICT RESTORED', completedChapter.name, completedChapter.outro + reward, showChapterStart);
-  }
+
   pendingMilestone = 0;
 }
 function afterCompletion(skipped) {
@@ -147,8 +149,13 @@ function renderOptions(q) {
   });
 }
 function openEncounter() {
-  if (!playing || dialogs.some(id => $(id).open) || state.completed >= questions.length) return;
-  if (!world.near(beaconFor(state.completed))) {setPatch('Follow the glowing signal, or use Follow signal to reach it automatically.');tone(180);return;}
+  if (!playing || dialogs.some(id => $(id).open)) return;
+  const current=objective();
+  if(current.type==='complete')return;
+  if(!world.near(targetBeacon())){setPatch('Follow the glowing signal, or choose Follow signal.');return;}
+  if(current.type!=='question'){openOperation(current);return;}
+  if(state.completed>=questions.length)return;
+  if (!world.near(targetBeacon())) {setPatch('Follow the glowing signal, or use Follow signal to reach it automatically.');tone(180);return;}
   const q = questions[state.completed];
   state = beginAttempt(state, q); save();
   activeQuestion = q; resolved = false;
@@ -193,7 +200,7 @@ function answerQuestion(original, button) {
     tone(150);
   } else {
     save(); updateHud(); renderOptions(q);
-    $('feedback').textContent = result.shielded ? 'Second chance absorbed the damage. Inspect the evidence and try again.' : 'That choice does not match this incident. One health lost. Recheck the evidence and try another option.';
+    $('feedback').textContent = result.shielded ? 'Second chance absorbed the damage. Inspect the evidence and try again.' : q.wrongExplanations?.[original-1] || 'That choice does not match this incident. One health lost. Recheck the evidence and try another option.';
     tone(180);
   }
   refreshLifelines();
@@ -239,8 +246,11 @@ $('begin').addEventListener('click', () => {
   if (state.completed === 0 && !state.attempt) showChapterStart();
   if (state.completed === 500) setPatch('Nexus is restored. Your expedition lives in the journal.');
 });
+$('feedback-button').addEventListener('click',()=>{world.clearKeys();$('feedback-preview').textContent='';$('feedback-link').hidden=true;$('feedback-dialog').showModal();});
+$('feedback-close').addEventListener('click',()=>$('feedback-dialog').close());
+$('feedback-preview-button').addEventListener('click',()=>{const report=`ROOT player feedback\nCompleted: ${state.completed}/500\nCurrent question: ${Math.min(500,state.completed+1)}\nRating: ${$('feedback-rating').value}\n\n${$('feedback-note').value.trim()}`;$('feedback-preview').textContent=report;const url=new URL('https://github.com/Vishnu063/root-the-last-engineer/issues/new');url.searchParams.set('title',`Game feedback: ${$('feedback-rating').value}`);url.searchParams.set('body',report);$('feedback-link').href=url.href;$('feedback-link').hidden=false;});
 $('home').addEventListener('click', () => {playing=false;world.clearKeys();document.body.classList.remove('in-game');$('hud').hidden=true;$('landing').hidden=false;$('begin').textContent='RESUME EXPEDITION ↗';});
-$('help').addEventListener('click', () => showInfo('Your field guide', 'Move with WASD, arrows or the touch controls. Follow signal provides an accessible automatic walk to the beacon; then choose Investigate beacon or press E. Inspect the evidence and choose one of four answers. Each wrong answer costs one of three health. At zero health Patch returns you to base with completed missions saved. Every ten completions earns two support credits; they become usable at question 20. Choose 50:50, Ask Patch or Second Chance for one credit. Each type is usable once per encounter, and use is saved when you close or reload. Skip is a separate token earned only at 100, 200 and 300 completions; it spends no health but earns no XP. Skips count toward milestone progression. Ten chapters span 500 questions; 401–500 are extreme multi-system incidents. This is a fictional simulator: no commands execute on real systems. Progress stays in this browser.'));
+$('help').addEventListener('click', () => showInfo('Your field guide', 'Move with WASD, arrows or the touch controls. Follow signal provides an accessible automatic walk to the beacon; then choose Investigate beacon or press E. Inspect the evidence and choose one of four answers. Each wrong answer costs one of three health. At zero health Patch returns you to base with completed missions saved. Every ten completions earns two support credits; they become usable at question 20. Restore each district workshop terminal, then face its guardian after 50 questions by executing four safe recovery steps in order. Boss stability is separate from question health. Choose 50:50, Ask Patch or Second Chance for one credit. Each type is usable once per encounter, and use is saved when you close or reload. Skip is a separate token earned only at 100, 200 and 300 completions; it spends no health but earns no XP. Skips count toward milestone progression. Ten chapters span 500 questions; 401–500 are extreme multi-system incidents. This is a fictional simulator: no commands execute on real systems. Progress stays in this browser.'));
 $('sound').addEventListener('click', () => {sound=!sound;updateSound();tone(520);});
 $('map').addEventListener('click',showMap);$('journal').addEventListener('click',showJournal);
 $('info-close').addEventListener('click', () => $('info').close());
@@ -250,7 +260,7 @@ $('close').addEventListener('click', () => $('encounter').close());
 $('next').addEventListener('click', () => $('encounter').close());
 $('encounter').addEventListener('close',onEncounterClose);
 $('interact').addEventListener('click',openEncounter);
-$('navigate').addEventListener('click', () => {setPatch('Following the recovery signal. Investigate when you arrive.');world.follow(beaconFor(state.completed));});
+$('navigate').addEventListener('click', () => {setPatch('Following the recovery signal. Investigate when you arrive.');world.follow(targetBeacon());});
 document.querySelectorAll('[data-life]').forEach(button => button.addEventListener('click', () => useLifeline(button.dataset.life)));
 addEventListener('keydown', event => {
   if (!playing || dialogs.some(id => $(id).open) || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
@@ -265,3 +275,43 @@ document.querySelectorAll('[data-dir]').forEach(button => {
   for (const event of ['pointerup','pointercancel','lostpointercapture']) button.addEventListener(event,() => world.keys[key]=false);
 });
 if (state.completed > 0) $('begin').textContent='RESUME EXPEDITION ↗';
+
+let operationContext=null;
+let bossStep=0;
+let stability=3;
+function openOperation(current){
+  operationContext={...current};bossStep=0;stability=3;
+  $('operation-result').textContent='';$('operation-next').hidden=true;
+  renderOperation();$('operation').showModal();
+}
+function renderOperation(){
+  const current=operationContext;
+  const data=current.type==='puzzle'?operations[current.chapter].puzzle:operations[current.chapter].boss;
+  $('operation-tag').textContent=`LEVEL ${current.chapter+1} · ${current.type==='puzzle'?'EXPLORATION PUZZLE':'INTERACTIVE BOSS'}`;
+  $('operation-title').textContent=data.title;
+  $('operation-task').textContent=current.type==='puzzle'?data.task:`${data.brief} Select the safest NEXT action. Completed steps: ${bossStep}/4.`;
+  $('operation-stability').textContent=current.type==='boss'?`RECOVERY STABILITY ${'◆'.repeat(stability)}${'◇'.repeat(3-stability)}`:'';
+  $('operation-choices').replaceChildren();
+  const choices=current.type==='puzzle'?data.choices:[...data.steps[0].slice(bossStep),...data.steps[1]];
+  const order=optionOrder(current.chapter+71);
+  const arranged=current.type==='puzzle'?order.map(i=>choices[i]):choices.map((text,i)=>({text,sort:(i*7+current.chapter*11)%13})).sort((a,b)=>a.sort-b.sort).map(x=>x.text);
+  for(const choice of arranged){
+    const button=document.createElement('button');button.textContent=choice;
+    button.addEventListener('click',()=>{
+      if(current.type==='puzzle'){
+        if(choice!==data.choices[data.answer]){button.disabled=true;$('operation-result').textContent='That route does not solve the terminal. Inspect the requirements and try again.';tone(180);return;}
+        operationProgress.puzzles.push(current.chapter);save();updateHud();
+        $('operation-result').textContent=`Terminal restored. ${data.why}`;
+        [...$('operation-choices').children].forEach(b=>b.disabled=true);$('operation-next').hidden=false;world.burst(chapterFor(state.completed).color);tone(660);
+      }else{
+        const result=bossAction(current.chapter,bossStep,choice);
+        if(!result.correct){stability--;if(stability===0){bossStep=0;stability=3;$('operation-result').textContent='Recovery destabilized. Patch resets the simulation. Preserve evidence, control the cause, repair, then verify.';}else $('operation-result').textContent='Unsafe sequence. That action is not the next safe step. Review the incident before continuing.';renderOperation();tone(150);return;}
+        bossStep++;
+        if(result.complete){operationProgress.bosses.push(current.chapter);save();updateHud();$('operation-result').textContent='Guardian contained. All four recovery steps completed in a safe order.';[...$('operation-choices').children].forEach(b=>b.disabled=true);$('operation-next').hidden=false;$('operation-stability').textContent='RECOVERY VERIFIED · 4/4';world.burst(chapters[current.chapter].color);tone(880);}
+        else{$('operation-result').textContent='Repair accepted. Select the next action.';renderOperation();tone(520);}
+      }
+    });$('operation-choices').append(button);
+  }
+}
+$('operation-close').addEventListener('click',()=>$('operation').close());
+$('operation-next').addEventListener('click',()=>{const current=operationContext;$('operation').close();if(current.type==='boss'&&operationProgress.bosses.includes(current.chapter)){if(current.chapter===9)story('CAMPAIGN COMPLETE · 500 / 500','The city rises again.',chapters[9].outro);else story('DISTRICT RESTORED',chapters[current.chapter].name,chapters[current.chapter].outro,showChapterStart);}});
