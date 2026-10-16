@@ -7,6 +7,7 @@ import {pathToFileURL} from 'node:url';
 import {fresh,complete} from '../engine.js';
 import {questions} from '../questions.js';
 import {operations} from '../operations.js';
+import {runAdventureChecks} from './adventure-browser.mjs';
 const require=createRequire(import.meta.url);
 let resolved;
 try {resolved=require.resolve('playwright');} catch {
@@ -74,6 +75,7 @@ try {
   await context.close();
   const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:844}}),rp=await reduced.newPage();
   await rp.goto(url);await rp.click('#begin');await rp.click('#story-next');await rp.click('#navigate');await rp.waitForFunction(()=>document.querySelector('#patch-text').textContent.includes('Reached the recovery signal'));await rp.click('#interact');await rp.locator('#operation[open]').waitFor();await rp.getByRole('button',{name:operations[0].puzzle.choices[0],exact:true}).click();await rp.click('#operation-next');await reduced.close();
+  await runAdventureChecks(browser,url,root);
   assert.deepEqual(errors,[]);
   console.log('Browser checks passed: exploration, answers, persistence, lifelines, milestone, Skip, extreme chapter, puzzles, boss recovery sequences, feedback preview, ending, mobile layout and reduced motion.');
 } finally {await browser?.close();await new Promise(r=>server.close(r));}
