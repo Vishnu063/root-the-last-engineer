@@ -1,7 +1,39 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#080e1b"><title>ROOT · The Last Engineer</title><link rel="stylesheet" href="style.css"></head><body>
-<canvas id="world" aria-label="Animated Nexus city"></canvas><div class="vignette"></div>
-<header><a class="brand" href="./"><span class="root-icon">⌘</span> ROOT<span class="subtitle">THE LAST ENGINEER</span></a><div class="header-right"><span class="live">● NEXUS OFFLINE</span><button id="sound" aria-pressed="false">Sound off</button><button id="help">Controls</button></div></header>
-<main id="landing"><div class="eyebrow">A DEVOPS ADVENTURE · CHAPTER 01</div><h1>The city fell.<br><em>You’re still here.</em></h1><p class="intro">One broken update. A missing mentor. A city waiting for its last engineer. Follow the signal. Bring Nexus back to life.</p><button class="primary" id="begin">ENTER NEXUS <span>↗</span></button><div class="landing-meta">EXPLORE · INVESTIGATE · RESTORE</div><div class="transmission"><span class="avatar">P</span><div><small>PATCH · INCOMING TRANSMISSION</small><p>“Don’t restart everything. Find what changed.”</p></div><span class="wave">▂▆▃▇▂</span></div><div class="chapter-label">01 / THE DARK WORKSHOP<br><small>30 playable encounters · 500 planned</small></div></main>
-<section id="hud" hidden><div class="panel status"><small>ENGINEER / VISHNU’S EXPEDITION</small><h2 id="mission-title"></h2><div id="stats"></div><div class="progress"><i id="progress"></i></div></div><div class="panel objective"><small>CURRENT OBJECTIVE</small><p>Reach the glowing beacon.<br>Press <b>E</b> to investigate.</p><button id="interact">Investigate beacon</button></div><div class="panel patch"><span class="avatar">P</span><p id="patch-text">I’m with you. Let’s restore the workshop.</p></div><div class="bottom"><span>WASD / ARROWS · MOVE &nbsp; E · INTERACT</span><button id="journal">Mission journal</button><button id="home">Pause</button></div><div class="touch-controls" aria-label="Movement controls"><button data-dir="up" aria-label="Move up">↑</button><div><button data-dir="left" aria-label="Move left">←</button><button data-dir="down" aria-label="Move down">↓</button><button data-dir="right" aria-label="Move right">→</button></div></div></section>
-<dialog id="encounter"><div class="dialog-top"><span id="encounter-tag"></span><button id="close" aria-label="Close encounter">×</button></div><h2 id="question-title"></h2><p id="prompt"></p><div id="options"></div><div id="feedback" role="status"></div><div id="lifelines"><small>PATCH SUPPORT</small><div class="life-buttons"><button data-life="half">50:50</button><button data-life="hint">Ask Patch</button><button data-life="retry">Second chance</button><button data-life="skip">Skip</button></div><p id="life-info"></p></div><button id="next" class="primary" hidden>RESTORE & CONTINUE →</button></dialog>
-<dialog id="info"><button id="info-close" aria-label="Close">×</button><h2 id="info-title"></h2><div id="info-body"></div></dialog><script type="module" src="game.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#080e1b">
+<meta name="description" content="Explore Nexus with Patch. Restore a digital city through 500 DevOps encounters across ten story chapters.">
+<title>ROOT · The Last Engineer</title><link rel="stylesheet" href="style.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080e1b'/%3E%3Ctext x='13' y='46' font-size='42' fill='%23a6f3cb'%3ER%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div id="title-art" aria-hidden="true"></div><canvas id="world" aria-label="Nexus city. Use the movement controls and Investigate beacon button to play."></canvas><div class="vignette"></div>
+<header><a class="brand" href="./" aria-label="ROOT home"><span class="root-icon">⌘</span> ROOT<span class="subtitle">THE LAST ENGINEER</span></a><div class="header-right"><span class="live" id="city-status">● NEXUS OFFLINE</span><button id="sound" aria-pressed="false">Sound off</button><button id="help">Controls</button></div></header>
+<main id="landing">
+ <div class="eyebrow">A DEVOPS ADVENTURE · 10 CHAPTERS</div>
+ <h1>The city fell.<br><em>You’re still here.</em></h1>
+ <p class="intro">One broken update. A missing mentor. A city waiting for its last engineer. Follow the signal. Bring Nexus back to life.</p>
+ <button class="primary" id="begin">ENTER NEXUS <span>↗</span></button>
+ <div class="landing-meta">EXPLORE · INVESTIGATE · RESTORE</div>
+ <div class="transmission"><span class="avatar" aria-hidden="true">▣</span><div><small>PATCH · INCOMING TRANSMISSION</small><p>“Don’t restart everything. Find what changed.”</p></div><span class="wave" aria-hidden="true">▂▆▃▇▂</span></div>
+ <div class="chapter-label">500 QUESTIONS / ONE CITY TO SAVE<br><small>Questions 401–500: extreme operations</small></div>
+</main>
+<section id="hud" hidden aria-label="Game status and controls">
+ <div class="panel status"><small id="district"></small><h2 id="mission-title"></h2><div id="stats" aria-live="polite"></div><div class="progress" role="progressbar" aria-label="Campaign completion" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0"><i id="progress"></i></div><span id="rank"></span></div>
+ <div class="panel objective"><small>CURRENT OBJECTIVE</small><p id="objective-text"></p><button id="interact">Investigate beacon</button><button id="navigate" title="Accessible alternative to directional movement">Follow signal</button></div>
+ <div class="panel patch"><span class="avatar" aria-hidden="true">▣</span><p id="patch-text" role="status">I’m with you. Let’s restore the workshop.</p></div>
+ <div class="bottom"><span>WASD / ARROWS · MOVE &nbsp; E · INTERACT</span><button id="map">City map</button><button id="journal">Journal</button><button id="home">Pause</button></div>
+ <div class="touch-controls" aria-label="Movement controls"><button data-dir="up" aria-label="Move north">↑</button><div><button data-dir="left" aria-label="Move west">←</button><button data-dir="down" aria-label="Move south">↓</button><button data-dir="right" aria-label="Move east">→</button></div></div>
+</section>
+<dialog id="encounter" aria-labelledby="question-title">
+ <div class="dialog-top"><span id="encounter-tag"></span><button id="close" aria-label="Close encounter">×</button></div>
+ <div id="case-progress" aria-label="Incident investigation stages"></div><h2 id="question-title"></h2>
+ <details id="evidence"><summary>Inspect recorded evidence</summary><p id="evidence-text"></p></details>
+ <p id="prompt"></p><div id="options" aria-label="Answer choices"></div><div id="feedback" role="status"></div>
+ <div id="references" hidden></div>
+ <div id="lifelines"><small>PATCH SUPPORT</small><div class="life-buttons"><button data-life="half">50:50</button><button data-life="hint">Ask Patch</button><button data-life="retry">Second chance</button><button data-life="skip">Skip</button></div><p id="life-info"></p></div>
+ <button id="next" class="primary" hidden>CONTINUE →</button>
+</dialog>
+<dialog id="story" aria-labelledby="story-title"><div class="story-art" role="img" aria-label="The floating city of Nexus"></div><div class="story-copy"><small id="story-label"></small><h2 id="story-title"></h2><p id="story-text"></p><button id="story-next" class="primary">FOLLOW THE SIGNAL →</button></div></dialog>
+<dialog id="info" aria-labelledby="info-title"><button id="info-close" aria-label="Close">×</button><h2 id="info-title"></h2><div id="info-body"></div></dialog>
+<script type="module" src="game.js"></script>
+</body></html>
