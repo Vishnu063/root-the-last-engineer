@@ -249,7 +249,7 @@ $('begin').addEventListener('click', () => {
 $('feedback-button').addEventListener('click',()=>{world.clearKeys();$('feedback-preview').textContent='';$('feedback-link').hidden=true;$('feedback-dialog').showModal();});
 $('feedback-close').addEventListener('click',()=>$('feedback-dialog').close());
 $('feedback-preview-button').addEventListener('click',()=>{const report=`ROOT player feedback\nCompleted: ${state.completed}/500\nCurrent question: ${Math.min(500,state.completed+1)}\nRating: ${$('feedback-rating').value}\n\n${$('feedback-note').value.trim()}`;$('feedback-preview').textContent=report;const url=new URL('https://github.com/Vishnu063/root-the-last-engineer/issues/new');url.searchParams.set('title',`Game feedback: ${$('feedback-rating').value}`);url.searchParams.set('body',report);$('feedback-link').href=url.href;$('feedback-link').hidden=false;});
-$('home').addEventListener('click', () => {playing=false;world.clearKeys();document.body.classList.remove('in-game');$('hud').hidden=true;$('landing').hidden=false;$('begin').textContent='RESUME EXPEDITION ↗';});
+$('home').addEventListener('click', () => {playing=false;world.clearKeys();document.body.classList.remove('in-game');$('hud').hidden=true;$('landing').hidden=false;$('begin').textContent='RESUME TRAINING ↗';});
 $('help').addEventListener('click', () => showInfo('Your field guide', 'Move with WASD, arrows or the touch controls. Follow signal provides an accessible automatic walk to the beacon; then choose Investigate beacon or press E. Inspect the evidence and choose one of four answers. Each wrong answer costs one of three health. At zero health Patch returns you to base with completed missions saved. Every ten completions earns two support credits; they become usable at question 20. Restore each district workshop terminal, then face its guardian after 50 questions by executing four safe recovery steps in order. Boss stability is separate from question health. Choose 50:50, Ask Patch or Second Chance for one credit. Each type is usable once per encounter, and use is saved when you close or reload. Skip is a separate token earned only at 100, 200 and 300 completions; it spends no health but earns no XP. Skips count toward milestone progression. Ten chapters span 500 questions; 401–500 are extreme multi-system incidents. This is a fictional simulator: no commands execute on real systems. Progress stays in this browser.'));
 $('sound').addEventListener('click', () => {sound=!sound;updateSound();tone(520);});
 $('map').addEventListener('click',showMap);$('journal').addEventListener('click',showJournal);
@@ -274,7 +274,7 @@ document.querySelectorAll('[data-dir]').forEach(button => {
   button.addEventListener('pointerdown',event => {event.preventDefault();button.setPointerCapture(event.pointerId);world.keys[key]=true;});
   for (const event of ['pointerup','pointercancel','lostpointercapture']) button.addEventListener(event,() => world.keys[key]=false);
 });
-if (state.completed > 0) $('begin').textContent='RESUME EXPEDITION ↗';
+if (state.completed > 0) $('begin').textContent='RESUME TRAINING ↗';
 
 let operationContext=null;
 let bossStep=0;
