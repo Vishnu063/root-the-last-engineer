@@ -6,6 +6,10 @@ Explore Nexus, follow recovery signals and restore its systems through 500 DevOp
 
 ![Nexus — original title artwork](assets/nexus-art.svg)
 
+## Play online
+
+[Enter Nexus](https://root-last-engineer.vishnukushwaha63.chatgpt.site)
+
 ## Play locally
 
 Requires Python 3. No npm install or cloud account is needed to play.
@@ -16,13 +20,14 @@ python3 -m http.server 8080
 
 Open **http://localhost:8080**. Move with WASD, arrow keys or the touch controls. Approach the glowing beacon and press **E**, or choose **Investigate beacon**. **Follow signal** walks to the objective automatically.
 
-Inspect recorded evidence, choose an answer, read the explanation and move on. Your expedition saves in this browser. Closing or reloading an encounter preserves wrong choices and lifelines already spent. Clearing browser site data deletes the save.
+Follow the signal to each chapter’s workshop terminal before its questions unlock. After each set of 50 questions, face its guardian before advancing. Inspect recorded evidence, choose an answer, read the explanation and move on. Your expedition saves in this browser. Closing or reloading an encounter preserves wrong choices and lifelines already spent. Clearing browser site data deletes the save.
 
 ## What's playable
 
 - **500 questions across ten chapters**, with four options per question.
 - 30 introductory encounters, then **94 incident cases with five different questions each**: diagnose, investigate, repair, verify and prevent. These are five stages of an incident, not 470 unrelated incidents.
 - **100 extreme encounters at questions 401–500**, covering interacting failures, data safety, failover, automation conflicts and incident coordination.
+- **Ten exploration terminals** with workshop puzzles, plus **ten interactive guardians** requiring four safe recovery actions in sequence. Incorrect boss actions reduce recovery stability and can reset the sequence. Boss stability is separate from question health.
 - An explorable procedural city, a visible engineer and Patch, district colors, recovery beacons, original title/story artwork, checkpoint effects and an ending.
 - Three health, XP, a city map, an explanation journal, keyboard/touch controls, an automatic navigation alternative, reduced-motion effects and optional sound.
 
@@ -67,7 +72,7 @@ npm test
 npm run build:campaign
 ```
 
-`content/incidents.tsv` is the editable case source. Each row contains evidence, diagnosis, investigation, repair, verification and prevention. The build script produces `campaign.js`; commit both source and output. Distractors are phase-matched alternatives from other cases in the same campaign band. This keeps options consistent, but more closely matched hand-authored distractors would improve challenge quality.
+`content/incidents.tsv` is the editable case source. Each row contains evidence, diagnosis, investigation, repair, verification and prevention. `content/alternatives.tsv` contains case-specific competing diagnoses and unsafe or insufficient repairs. The build script produces `campaign.js`; commit both source and output. The build derives phase-appropriate wrong choices from each incident’s own alternatives. Wrong-answer explanations and a documented editorial review are included. Difficulty still needs calibration with actual learners.
 
 To run real browser checks:
 
@@ -81,6 +86,12 @@ The GitHub Actions workflow runs engine/content checks, verifies reproducible ca
 
 ## Scope and limitations
 
-This is a playable learning-game prototype. Questions simulate decisions; commands do not execute against real infrastructure. Later questions link to official references, but the bank has not received independent expert review. Difficulty is editorial and has not been calibrated with learners. The boss encounters are story and question checkpoints; there is no action-combat system. No video cutscenes, multiplayer, accounts, cloud saves or sandbox terminals are included.
+This is a playable learning-game prototype. Questions simulate decisions; commands do not execute against real infrastructure. Later questions link to official references, but the bank has not received independent expert review. Difficulty is editorial and has not been calibrated with learners. Boss encounters are interactive recovery-sequence simulations, not action-combat battles. No video cutscenes, multiplayer, accounts, cloud saves or sandbox terminals are included.
 
-The remaining quality work is learner playtesting, stronger scenario-specific distractors, more environmental puzzles, deeper tool tracks and independent technical review. See `content/ART.md` for artwork provenance.
+The implementation includes editorial technical spot checks, incident-specific alternatives, exploration terminals and interactive boss sequences. Actual learner playtesting and independent technical review cannot be replaced by automated checks. See `content/ART.md` for artwork provenance.
+
+## Player feedback
+
+Choose **Feedback** in the game, select a difficulty or issue category and write a note. Preview the report before opening GitHub; nothing is sent automatically. The issue is submitted only if the player chooses to submit it on GitHub. No player feedback or external expert review has been fabricated. See `content/REVIEW.md` for review scope.
+
+The public build uses the Sites hosting service. GitHub remains the source repository; changing GitHub source alone does not redeploy the hosted version. A publication must package and publish the matching Site source.
