@@ -1,7 +1,7 @@
 name: Game quality
 on:
   push:
-    branches: [main, 'game/**']
+    branches: [main, 'game/**', 'feature/adventure-v1']
   pull_request:
   workflow_dispatch:
 permissions:
