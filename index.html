@@ -12,8 +12,8 @@
  <div class="eyebrow">A DEVOPS ADVENTURE · 10 CHAPTERS</div>
  <h1>The city fell.<br><em>You’re still here.</em></h1>
  <p class="intro">One broken update. A missing mentor. A city waiting for its last engineer. Follow the signal. Bring Nexus back to life.</p>
- <button class="primary" id="begin">ENTER NEXUS <span>↗</span></button>
- <div class="landing-meta">EXPLORE · INVESTIGATE · RESTORE</div>
+ <button class="primary" id="adventure-start">PLAY ADVENTURE <span>↗</span></button><button id="begin" class="training-entry">TRAINING · 500 QUESTIONS</button>
+ <div class="landing-meta">EXPLORE · COLLECT · REPAIR · SURVIVE</div>
  <div class="transmission"><span class="avatar" aria-hidden="true">▣</span><div><small>PATCH · INCOMING TRANSMISSION</small><p>“Don’t restart everything. Find what changed.”</p></div><span class="wave" aria-hidden="true">▂▆▃▇▂</span></div>
  <div class="chapter-label">500 QUESTIONS / ONE CITY TO SAVE<br><small>Questions 401–500: extreme operations</small></div>
 </main>
@@ -37,5 +37,15 @@
 <dialog id="operation" aria-labelledby="operation-title"><div class="dialog-top"><span id="operation-tag"></span><button id="operation-close" aria-label="Close challenge">×</button></div><h2 id="operation-title"></h2><p id="operation-task"></p><div id="operation-stability"></div><div id="operation-choices"></div><p id="operation-result" role="status"></p><button id="operation-next" class="primary" hidden>RETURN TO NEXUS →</button></dialog>
 <dialog id="feedback-dialog" aria-labelledby="feedback-title"><button id="feedback-close" aria-label="Close feedback">×</button><h2 id="feedback-title">Help shape Nexus</h2><p>No report is sent automatically. Review your report, then choose whether to post it as a GitHub issue.</p><label>How was the difficulty?<select id="feedback-rating"><option>Too easy</option><option selected>About right</option><option>Too hard</option><option>Question seems incorrect</option><option>Game bug</option></select></label><label>What should change?<textarea id="feedback-note" rows="4" maxlength="2000" placeholder="Question number, confusing option, or a gameplay suggestion"></textarea></label><pre id="feedback-preview"></pre><button id="feedback-preview-button">Preview report</button><a id="feedback-link" class="button-link" target="_blank" rel="noopener noreferrer" hidden>Open report on GitHub ↗</a></dialog>
 <dialog id="info" aria-labelledby="info-title"><button id="info-close" aria-label="Close">×</button><h2 id="info-title"></h2><div id="info-body"></div></dialog>
-<script type="module" src="game.js"></script>
+<canvas id="adventure-canvas" hidden aria-label="Interactive adventure world. Move with WASD or touch controls; E interacts and Space emits an EMP."></canvas>
+<section id="adventure-hud" hidden aria-label="Adventure controls">
+ <div class="adv-top"><div class="adv-brand">ROOT <small>ADVENTURE MODE</small></div><div><button id="adv-assist" aria-pressed="false">Assist off</button><button id="adv-help">Controls</button><button id="adv-pause">Pause</button></div></div>
+ <div class="adv-mission"><small id="adv-sector"></small><h2 id="adv-title"></h2><p id="adv-task"></p><div id="adv-stats" aria-live="polite"></div><div class="adv-meter"><i id="adv-progress"></i></div></div>
+ <div class="adv-message"><span class="avatar" aria-hidden="true">▣</span><p id="adv-message" role="status"></p></div>
+ <div class="adv-actions"><button id="adv-follow">Follow objective</button><button id="adv-interact">Interact · E</button><button id="adv-pulse">EMP · SPACE</button></div>
+ <div class="adv-dpad" aria-label="Adventure movement"><button data-adv-dir="up" aria-label="Adventure move north">↑</button><div><button data-adv-dir="left" aria-label="Adventure move west">←</button><button data-adv-dir="down" aria-label="Adventure move south">↓</button><button data-adv-dir="right" aria-label="Adventure move east">→</button></div></div>
+</section>
+<dialog id="adv-panel" aria-labelledby="adv-panel-title"><button id="adv-panel-close" aria-label="Close repair panel">×</button><small id="adv-panel-tag"></small><h2 id="adv-panel-title"></h2><p id="adv-panel-task"></p><div id="adv-puzzle"></div><p id="adv-panel-feedback" role="status"></p><button id="adv-apply" class="primary">ACTIVATE REPAIR →</button></dialog>
+<dialog id="adv-result" aria-labelledby="adv-result-title"><small id="adv-result-tag"></small><h2 id="adv-result-title"></h2><p id="adv-result-text"></p><button id="adv-next" class="primary">NEXT DISTRICT →</button></dialog>
+<script type="module" src="game.js"></script><script type="module" src="adventure.js"></script>
 </body></html>
